@@ -13,18 +13,10 @@ import {rxComponentElement, AccessorPromiseString, Promise} from './rxComponent'
 
 let rxSelect = require('./rxSelect.page').rxSelect;
 
-interface rxDatePicker {
-    close(): void;
-    isDateSelected(string): Promise<boolean>;
-    isOpen(): Promise<boolean>;
-    isValid(): Promise<boolean>;
-    open(): void;
-};
-
 /**
  * @class
  */
-class rxDatePicker extends rxComponentElement {
+export class rxDatePicker extends rxComponentElement {
     public rootElement: ElementFinder;
     private tblCurrentMonthDays: ElementArrayFinder;
 
@@ -269,5 +261,3 @@ class rxDatePicker extends rxComponentElement {
     };
 
 };
-
-exports.rxDatePicker = rxDatePicker;
