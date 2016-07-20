@@ -9,13 +9,9 @@ describe('rxDatePicker', function () {
 
     describe('simple example', function () {
         var isoFormat = 'YYYY-MM-DD';
-        var formatMonth = 'MMM';
-        var formatYear = 'YYYY';
+        var formatMonth = 'MM';
         var today = moment().format(isoFormat);
-        var month = moment(today).clone().format(formatMonth);
-        var year = moment(today).clone().format(formatYear);
         var lastMonth = moment(today).clone().subtract(1, 'month').startOf('month');
-        var lastMonthName = moment(lastMonth).clone().format(formatMonth);
         var nextMonth = moment(today).clone().add(1, 'month');
         var nextMonthName = moment(nextMonth).clone().format(formatMonth);
 
@@ -23,46 +19,12 @@ describe('rxDatePicker', function () {
             picker = new encore.rxDatePicker($('#dpSimple'));
         });
 
-        it('should be enabled', function () {
-            expect(picker.isEnabled()).to.eventually.eq(true);
-        });
-
-        it('should be valid', function () {
-            expect(picker.isValid()).to.eventually.eq(true);
-        });
-
-        it('should not display calendar', function () {
-            expect(picker.isOpen()).to.eventually.eq(false);
-        });
-
-        it('should open the calendar', function () {
-            picker.open();
-            expect(picker.isOpen()).to.eventually.eq(true);
-        });
-
-        it('should display the current month and year by default', function () {
-            expect(picker.month).to.eventually.equal(month);
-            expect(picker.year).to.eventually.equal(year);
-        });
-
-        it('should have some days that are in the current month', function () {
-            expect(picker.tblCurrentMonthDays.count()).to.eventually.be.above(0);
-        });
-
-        it('should have some days that are out of the current month', function () {
-            expect(picker.$$('.day.outOfMonth').count()).to.eventually.be.above(0);
-        });
-
-        it('should navigate back one month', function () {
-            picker.previousMonth();
-            expect(picker.month).to.eventually.equal(lastMonthName);
-        });
-
-        it('should navigate forward two months', function () {
-            picker.nextMonth();
-            picker.nextMonth();
-            expect(picker.month).to.eventually.equal(nextMonthName);
-        });
+        describe('exercise', encore.exercise.rxDatePicker({
+            instance: picker,
+            selectedYear: moment().format('YYYY'),
+            selectedMonth: moment().format('MM'),
+            selectedDay: moment().format('DD')
+        }));
 
         it('should close the calendar', function () {
             picker.close();
@@ -130,6 +92,7 @@ describe('rxDatePicker', function () {
             picker.date = lastMonth.format(isoFormat);
             expect(picker.date).to.eventually.equal(lastMonth.format(isoFormat));
         });
+
     });
 
     describe('enabled, valid', function () {

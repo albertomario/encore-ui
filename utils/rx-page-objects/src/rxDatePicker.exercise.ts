@@ -1,12 +1,15 @@
 ///<reference path="../typings/globals/mocha/index.d.ts"/>
 ///<reference path="../typings/globals/chai/index.d.ts"/>
+///<reference path="../typings/globals/promises-a-plus/index.d.ts"/>
 ///<reference path="../typings/globals/chai-as-promised/index.d.ts"/>
 ///<reference path="../typings/globals/lodash/index.d.ts"/>
 
 import {expect} from 'chai';
 import * as _ from 'lodash';
+import * as moment from 'moment';
 
 import * as component from './rxDatePicker.page';
+import {Promise} from './rxComponent';
 
 interface rxDatePickerExerciseOptions {
     instance?: component.rxDatePicker;
@@ -14,6 +17,10 @@ interface rxDatePickerExerciseOptions {
     isDisplayed?: boolean;
     isEnabled?: boolean;
     isValid?: boolean;
+    isOpen?: boolean;
+    selectedYear?: string | null;
+    selectedMonth?: string | null;
+    selectedDay?: string | null;
 };
 
 /**
@@ -24,10 +31,17 @@ interface rxDatePickerExerciseOptions {
  * @param {Boolean} [options.isPresent=true] - Whether or not the datepicker is present.
  * @param {Boolean} [options.isDisplayed=true] - Whether or not the datepicker is displayed.
  * @param {Boolean} [options.isValid=true] - Whether or not the datepicker is valid.
+ * @param {Boolean} [options.isOpen=false] -
+ * Whether or not the datepicker has its calendar open.
+ * @param {String} [options.selectedMonth=null] - The current month that
+ * is selected in the datepicker. Pass in `null` for an empty date picker.
+ * @param {String} [options.selectedYear=null] - The current year that
+ * is selected in the datepicker. Pass in `null` for an empty date picker.
  * @example
  * describe('default exercises', encore.exercise.rxDatePicker({
  *     instance: myPage.datepicker, // select one of many pagination instances from your page objects
- *     isValid: false
+ *     isValid: false,
+ *     selectedMonth: '12'
  * }));
  */
 export function rxDatePicker (options: rxDatePickerExerciseOptions) {
@@ -40,20 +54,176 @@ export function rxDatePicker (options: rxDatePickerExerciseOptions) {
         isPresent: true,
         isDisplayed: true,
         isEnabled: true,
-        isValid: true
+        isValid: true,
+        isOpen: false,
+        selectedMonth: null,
+        selectedYear: null,
     });
 
     // avoid mangling mocha's `this` context by not using fat-arrow syntax
     return function () {
-        var datepicker;
+        let datepicker: component.rxDatePicker;
+        let isoFormat = 'YYYY-MM-DD';
+        let formatMonth = 'MM';
 
         before(function () {
             datepicker = options.instance;
         });
 
-        it(`should ${options.isEnabled ? '' : 'not '}be enabled`, function () {
-            expect(datepicker.isEnabled).to.eventually.equal(options.isEnabled);
+        it(`should ${options.isPresent ? '' : 'not '}be present`, function () {
+            expect(datepicker.isPresent()).to.eventually.equal(options.isPresent);
         });
+
+        it(`should ${options.isDisplayed ? '' : 'not '}be displayed`, function () {
+            expect(datepicker.isDisplayed()).to.eventually.equal(options.isDisplayed);
+        });
+
+        it(`should ${options.isValid ? '' : 'not '}be valid`, function () {
+            expect(datepicker.isValid()).to.eventually.equal(options.isValid);
+        });
+
+        it(`should ${options.isEnabled ? '' : 'not '}be enabled`, function () {
+            expect(datepicker.isEnabled()).to.eventually.equal(options.isEnabled);
+        });
+
+        it(`should ${options.isOpen ? '' : 'not '}already have the calendar open`, function () {
+            expect(datepicker.isOpen()).to.eventually.equal(options.isOpen);
+        });
+
+        if (options.selectedMonth !== null) {
+            it(`should have '${options.selectedMonth}' as the current selected month`, function () {
+                expect(datepicker.month).to.eventually.equal(options.selectedMonth);
+            });
+        }
+
+        if (options.selectedYear !== null) {
+            it(`should have '${options.selectedYear}' as the current selected year`, function () {
+                expect(datepicker.year).to.eventually.equal(options.selectedYear);;
+            });
+        }
+
+        it(`should ${options.isOpen ? 'close ' : 'open '}the calendar`, function () {
+            options.isOpen ? datepicker.close() : datepicker.open();
+            expect(datepicker.isOpen()).to.eventually.equal(!options.isOpen);
+        });
+
+        it('should return the calendar back to its original state', function () {
+            options.isOpen ? datepicker.open() : datepicker.close();
+            expect(datepicker.isOpen()).to.eventually.equal(options.isOpen);
+        });
+
+        it('should have some days that are in the current month', function () {
+            datepicker.open();
+            expect(datepicker.tblCurrentMonthDays.count()).to.eventually.be.above(0);
+        });
+
+        it('should have some days that are out of the current month', function () {
+            expect(datepicker.$$('.day.outOfMonth').count()).to.eventually.be.above(0);
+        });
+
+        it('should not select a date that is out of month', function () {
+            (datepicker.date as Promise<string>).then(currentDate => {
+                datepicker.$$('.day.outOfMonth span').each(invalidDay => {
+                    invalidDay.click();
+                    expect(datepicker.date).to.eventually.equal(currentDate);
+                });
+            });
+        });
+
+        if (_.every([
+            options.selectedYear !== null,
+            options.selectedMonth !== null,
+            options.selectedDay !== null
+        ])) {
+            let previousMonth: moment.Moment;
+            let nextMonth: moment.Moment;
+
+            it('should navigate back one month', function () {
+                (datepicker.date as Promise<string>).then(date => {
+                    datepicker.previousMonth();
+                    previousMonth = moment(date).subtract(1, 'month');
+                    expect(datepicker.month).to.eventually.equal(previousMonth.format(formatMonth));
+                });
+            });
+
+            it('should navigate forward two months', function () {
+                (datepicker.date as Promise<string>).then(date => {
+                    datepicker.nextMonth();
+                    datepicker.nextMonth();
+                    nextMonth = moment(date).add(1, 'month');
+                    expect(datepicker.month).to.eventually.equal(nextMonth.format(formatMonth));
+                });
+            });
+
+            it('should reopen the calendar and have the month unchanged', function () {
+                datepicker.close();
+                datepicker.open();
+                expect(datepicker.month).to.eventually.equal(nextMonth.format(formatMonth));
+                expect(datepicker.year).to.eventually.equal(nextMonth.year().toString());
+                datepicker.previousMonth();
+            });
+
+            it('should update the date to one month from now', function () {
+                datepicker.date = nextMonth.format(isoFormat);
+                expect(datepicker.date).to.eventually.equal(nextMonth.format(isoFormat));
+            });
+
+            it('should update the date to one month ago', function () {
+                let previousMonth = moment().subtract(1, 'months').format(isoFormat);
+                datepicker.date = previousMonth;
+                expect(datepicker.date).to.eventually.equal(previousMonth);
+            });
+
+            it('should return the date back to its original date', function () {
+                let originalDate = `${options.selectedYear}-${options.selectedMonth}-${options.selectedDay}`;
+                datepicker.date = originalDate;
+                expect(datepicker.date).to.eventually.equal(originalDate);
+            });
+
+        }
+
+        describe('today\'s date', function () {
+            let today: string;
+            let currentDate: string;
+
+            before(function () {
+                today = moment().format(isoFormat);
+                (datepicker.date as Promise<string>).then(date => {
+                    currentDate = date;
+                    datepicker.date = today;
+                });
+            });
+
+            it('should be highlighted with a special class', function () {
+                expect(datepicker.isDateToday(today)).to.eventually.be.true;
+            });
+
+            it('should highlight the currently selected date with a special class', function () {
+                expect(datepicker.isDateSelected(today)).to.eventually.be.true;
+            });
+
+            it('should update the date to the first of the month', function () {
+                var firstOfMonth = moment().startOf('month').format(isoFormat);
+                datepicker.date = firstOfMonth;
+                expect(datepicker.date).to.eventually.equal(firstOfMonth);
+            });
+
+            it('should update the date to the last of the month', function () {
+                var lastOfMonth = moment().endOf('month').format(isoFormat);
+                datepicker.date = lastOfMonth;
+                expect(datepicker.date).to.eventually.equal(lastOfMonth);
+            });
+
+            after(function () {
+                datepicker.date = currentDate;
+            });
+
+        });
+
+        after(function () {
+            options.isOpen ? datepicker.open() : datepicker.close();
+        });
+
     };
 
 };
