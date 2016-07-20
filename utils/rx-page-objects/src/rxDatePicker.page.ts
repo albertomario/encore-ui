@@ -18,7 +18,7 @@ let rxSelect = require('./rxSelect.page').rxSelect;
  */
 export class rxDatePicker extends rxComponentElement {
     public rootElement: ElementFinder;
-    private tblCurrentMonthDays: ElementArrayFinder;
+    public tblCurrentMonthDays: ElementArrayFinder;
 
     /**
      * @param {ElementFinder} [rxDatePickerElement=$('rx-date-picker')]
@@ -46,15 +46,34 @@ export class rxDatePicker extends rxComponentElement {
      * @private
      * @type {String}
      * @description (get/set) Month value of the picker _calendar_.
-     * **Format:** `MMM` (e.g. "Apr", "May", "Jun")
+     * **Format:** `MM` (e.g. "04", "05", "06")
      */
-    private get month(): AccessorPromiseString {
-        return rxSelect.initialize(this.element(by.model('currentMonth'))).selectedOption.getText();
+    get month(): AccessorPromiseString {
+        let currentMonth = this.element(by.model('currentMonth'));
+        return this.isOpen().then(isOpen => {
+            this.open(); // you have to in order to get to the dropdown
+
+            return rxSelect.initialize(currentMonth).selectedOption.getText().then(month => {
+                // if datepicker was closed before starting, put it back
+                if (!isOpen) {
+                    this.close();
+                }
+
+                return moment(`${month} 2000`, 'MMM YYYY').format('MM');
+            });
+        });
     }
-    private set month(value: AccessorPromiseString) {
+    set month(value: AccessorPromiseString) {
         this.open();
+        let dropdownExpectedValue = moment(`2000-${value}`, 'YYYY-MM').format('MMM');
+        if (dropdownExpectedValue === 'Invalid date') {
+            throw new Error(
+                `Unexpected month value for month number "${value}". Months are not zero-indexed!`
+            );
+        }
+
         let slowClick = false;
-        rxSelect.initialize(this.element(by.model('currentMonth'))).select(value, slowClick);
+        rxSelect.initialize(this.element(by.model('currentMonth'))).select(dropdownExpectedValue, slowClick);
     }
 
     /**
@@ -67,10 +86,20 @@ export class rxDatePicker extends rxComponentElement {
      *
      * **Format:** `YYYY` (e.g. "2016")
      */
-    private get year(): AccessorPromiseString {
-        return rxSelect.initialize(this.element(by.model('currentYear'))).selectedOption.getText();
+    get year(): AccessorPromiseString {
+        return this.isOpen().then(isOpen => {
+            this.open(); // you have to in order to get to the dropdown
+            let year = rxSelect.initialize(this.element(by.model('currentYear'))).selectedOption.getText();
+
+            // if datepicker was closed before starting, put it back
+            if (!isOpen) {
+                this.close();
+            }
+
+            return year;
+        });
     }
-    private set year(value: AccessorPromiseString) {
+    set year(value: AccessorPromiseString) {
         this.open();
         let slowClick = false;
         rxSelect.initialize(this.element(by.model('currentYear'))).select(value, slowClick);
@@ -91,7 +120,7 @@ export class rxDatePicker extends rxComponentElement {
     }
     set date(dateString: AccessorPromiseString) {
         let date = moment(dateString as string, 'YYYY-MM-DD');
-        this.month = date.format('MMM');
+        this.month = date.format('MM');
         this.year = date.format('YYYY');
         this._selectVisibleDate(dateString as string);
     }
@@ -128,8 +157,8 @@ export class rxDatePicker extends rxComponentElement {
         this.open();
         return (this.month as Promise<string>).then(function (month) {
             return (this.year as Promise<string>).then(function (year) {
-                let formattedDate = `${month}-${year}`;
-                let lastOfMonth = moment(formattedDate, 'MMM-YYYY').endOf('month');
+                let formattedDate = `${year}-${month}`;
+                let lastOfMonth = moment(formattedDate, 'YYYY-MM').endOf('month');
                 return this._selectVisibleDate(lastOfMonth.format('YYYY-MM-DD'));
             });
         });
@@ -192,7 +221,7 @@ export class rxDatePicker extends rxComponentElement {
      * @private
      * @description Click over to the next month in the calendar.
      */
-    private nextMonth(): Promise<void> {
+    nextMonth(): Promise<void> {
         this.open();
         return this.$('.arrow.next').click();
     };
@@ -201,7 +230,7 @@ export class rxDatePicker extends rxComponentElement {
      * @private
      * @description Click back to the previous month in the calendar.
      */
-    private previousMonth(): Promise<void> {
+    previousMonth(): Promise<void> {
         this.open();
         return this.$('.arrow.prev').click();
     };
@@ -226,7 +255,7 @@ export class rxDatePicker extends rxComponentElement {
      * `YYYY-MM-DD` formatted date to check if it is styled as today's date.
      * @returns {Promise<Boolean>}
      */
-    private isDateToday(date: string): Promise<boolean> {
+    isDateToday(date: string): Promise<boolean> {
         this.open();
         return this._dateElementByDate(date).getAttribute('class')
             .then(classes => _.includes(classes, 'today'));
