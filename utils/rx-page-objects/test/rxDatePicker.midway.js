@@ -21,9 +21,7 @@ describe('rxDatePicker', function () {
 
         describe('exercise', encore.exercise.rxDatePicker({
             instance: picker,
-            selectedYear: moment().format('YYYY'),
-            selectedMonth: moment().format('MM'),
-            selectedDay: moment().format('DD')
+            selectedDate: moment().format(isoFormat)
         }));
 
         it('should close the calendar', function () {

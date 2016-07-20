@@ -18,9 +18,7 @@ interface rxDatePickerExerciseOptions {
     isEnabled?: boolean;
     isValid?: boolean;
     isOpen?: boolean;
-    selectedYear?: string | null;
-    selectedMonth?: string | null;
-    selectedDay?: string | null;
+    selectedDate?: string | null;
 };
 
 /**
@@ -33,15 +31,13 @@ interface rxDatePickerExerciseOptions {
  * @param {Boolean} [options.isValid=true] - Whether or not the datepicker is valid.
  * @param {Boolean} [options.isOpen=false] -
  * Whether or not the datepicker has its calendar open.
- * @param {String} [options.selectedMonth=null] - The current month that
- * is selected in the datepicker. Pass in `null` for an empty date picker.
- * @param {String} [options.selectedYear=null] - The current year that
+ * @param {String} [options.selectedDate=null] - The current date that
  * is selected in the datepicker. Pass in `null` for an empty date picker.
  * @example
  * describe('default exercises', encore.exercise.rxDatePicker({
  *     instance: myPage.datepicker, // select one of many pagination instances from your page objects
  *     isValid: false,
- *     selectedMonth: '12'
+ *     selectedDate: moment().format('YYYY-MM-DD')
  * }));
  */
 export function rxDatePicker (options: rxDatePickerExerciseOptions) {
@@ -56,15 +52,27 @@ export function rxDatePicker (options: rxDatePickerExerciseOptions) {
         isEnabled: true,
         isValid: true,
         isOpen: false,
-        selectedMonth: null,
-        selectedYear: null,
+        selectedDate: null
     });
 
     // avoid mangling mocha's `this` context by not using fat-arrow syntax
     return function () {
+        let selectedYear: string;
+        let selectedMonth: string;
+        let selectedDay: string;
+
         let datepicker: component.rxDatePicker;
         let isoFormat = 'YYYY-MM-DD';
+        let formatYear = 'YYYY';
         let formatMonth = 'MM';
+        let formatDay = 'DD';
+
+        if (options.selectedDate) {
+            let m = moment(options.selectedDate);
+            selectedYear = m.format(formatYear);
+            selectedMonth = m.format(formatMonth);
+            selectedDay = m.format(formatDay);
+        }
 
         before(function () {
             datepicker = options.instance;
@@ -90,16 +98,25 @@ export function rxDatePicker (options: rxDatePickerExerciseOptions) {
             expect(datepicker.isOpen()).to.eventually.equal(options.isOpen);
         });
 
-        if (options.selectedMonth !== null) {
-            it(`should have '${options.selectedMonth}' as the current selected month`, function () {
-                expect(datepicker.month).to.eventually.equal(options.selectedMonth);
+        if (options.selectedDate !== null) {
+            it(`should have '${selectedMonth}' as the current selected month`, function () {
+                expect(datepicker.month).to.eventually.equal(selectedMonth);
             });
-        }
 
-        if (options.selectedYear !== null) {
-            it(`should have '${options.selectedYear}' as the current selected year`, function () {
-                expect(datepicker.year).to.eventually.equal(options.selectedYear);;
+            it(`should have '${selectedYear}' as the current selected year`, function () {
+                expect(datepicker.year).to.eventually.equal(selectedYear);;
             });
+
+            it(`should have '${selectedDay}' as the current selected day`, function () {
+                (datepicker.date as Promise<string>).then(date => {
+                    expect(moment(date, isoFormat).format(formatDay)).to.equal(selectedDay);
+                });
+            });
+
+            it(`should have '${options.selectedDate}' as the current selected date`, function () {
+                expect(datepicker.date).to.eventually.equal(options.selectedDate);
+            });
+
         }
 
         it(`should ${options.isOpen ? 'close ' : 'open '}the calendar`, function () {
@@ -130,11 +147,7 @@ export function rxDatePicker (options: rxDatePickerExerciseOptions) {
             });
         });
 
-        if (_.every([
-            options.selectedYear !== null,
-            options.selectedMonth !== null,
-            options.selectedDay !== null
-        ])) {
+        if (options.selectedDate !== null) {
             let previousMonth: moment.Moment;
             let nextMonth: moment.Moment;
 
@@ -175,9 +188,8 @@ export function rxDatePicker (options: rxDatePickerExerciseOptions) {
             });
 
             it('should return the date back to its original date', function () {
-                let originalDate = `${options.selectedYear}-${options.selectedMonth}-${options.selectedDay}`;
-                datepicker.date = originalDate;
-                expect(datepicker.date).to.eventually.equal(originalDate);
+                datepicker.date = options.selectedDate;
+                expect(datepicker.date).to.eventually.equal(options.selectedDate);
             });
 
         }
