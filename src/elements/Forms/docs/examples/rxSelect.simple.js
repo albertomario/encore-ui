@@ -1,5 +1,5 @@
 angular.module('demoApp')
-.controller('rxSelectCtrl', function ($scope) {
+.controller('rxSelectSimpleCtrl', function ($scope) {
     $scope.radCreateDestroy = 'destroyed';
 
     $scope.validEnabled = 3;

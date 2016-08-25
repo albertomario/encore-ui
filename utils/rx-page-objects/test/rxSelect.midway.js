@@ -2,7 +2,7 @@ describe('rxSelect', function () {
     var subject;
 
     before(function () {
-        demoPage.go('#/components/rxSelect');
+        demoPage.go('#/elements/Forms');
     });
 
     describe('(State) Valid Enabled', encore.exercise.rxSelect({
