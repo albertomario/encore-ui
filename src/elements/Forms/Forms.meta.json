@@ -37,11 +37,14 @@
         "rxRadio",
         "rxSuffix",
         "rxTimePicker",
+        "rxToggleSwitch",
         "select",
+        "switch",
         "table",
         "text area",
         "text",
         "time",
+        "toggle",
         "validation"
     ]
 }
