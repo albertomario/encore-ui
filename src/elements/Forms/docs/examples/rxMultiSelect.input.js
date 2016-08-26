@@ -3,5 +3,4 @@ angular.module('demoApp')
     $scope.data = {
         classification: []
     };
-
 });

@@ -5,5 +5,4 @@ angular.module('demoApp')
 
     $scope.invalidEnabled = 'D';
     $scope.invalidDisabled = '';
-
 });
