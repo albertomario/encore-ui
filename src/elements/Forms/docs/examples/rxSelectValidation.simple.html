@@ -1,0 +1,15 @@
+<p>
+  <strong>How do you like your bacon?</strong>
+  <small ng-if="baconPrep">({{baconPrep}})</small>
+  <br />
+  <select rx-select
+    id="selBaconPrep"
+    ng-model="baconPrep"
+    ng-required="true">
+    <option value="">I do not like bacon</option>
+    <option value="thin">Thin (light and crispy)</option>
+    <option value="medium">Medium (perfect balance of flavor)</option>
+    <option value="thick">Thick (borderline jerky)</option>
+    <option value="crumbled">Crumbled (great on salads)</option>
+  </select>
+</p>

@@ -1,0 +1,29 @@
+<div ng-controller="rxSelectSimpleCtrl">
+  <div class="demoContainer">
+    <p>
+      <span>
+      <input rx-radio
+        id="radDestroyed"
+        value="destroyed"
+        ng-model="radCreateDestroy" />
+      <label for="radDestroyed">Destroyed</label>
+      </span>
+      <span>
+      <input rx-radio
+        id="radCreated"
+        value="created"
+        ng-model="radCreateDestroy" />
+      <label for="radCreated">Created</label>
+      </span>
+    </p>
+    <p>
+      The following select is <code>{{radCreateDestroy}}</code>:
+      <select rx-select
+        id="selTargetCreated"
+        ng-if="radCreateDestroy === 'created'">
+        <option>CREATED!</option>
+      </select>
+    </p>
+    <br />
+  </div>
+</div>

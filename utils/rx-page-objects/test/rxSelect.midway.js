@@ -72,7 +72,7 @@ describe('rxSelect', function () {
             instance: encore.rxSelect.initialize($('#plainHtmlSecondSelected')),
             disabled: false,
             valid: true,
-            selectedText: 'Non Default Starting Option'
+            selectedText: 'Starts on Second Option'
         }));
     });
 
