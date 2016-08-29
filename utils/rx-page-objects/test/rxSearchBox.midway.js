@@ -1,6 +1,6 @@
 describe('rxSearchBox', function () {
     before(function () {
-        demoPage.go('#/components/rxSearchBox');
+        demoPage.go('#/elements/Forms');
     });
 
     describe('default rxSearchBox', encore.exercise.rxSearchBox({
